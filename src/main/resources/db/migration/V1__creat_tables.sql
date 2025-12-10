@@ -1,0 +1,24 @@
+CREATE TABLE users (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE short_urls (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    short_key VARCHAR(10) NOT NULL UNIQUE,
+    original_url TEXT NOT NULL,
+    is_private TINYINT(1) NOT NULL DEFAULT 0,
+    expires_at TIMESTAMP NULL,
+    created_by BIGINT,
+    click_count BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_short_urls_users FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+);
