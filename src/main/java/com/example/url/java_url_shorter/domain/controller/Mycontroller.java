@@ -8,15 +8,16 @@ import com.example.url.java_url_shorter.domain.models.ShortUrlDto;
 import com.example.url.java_url_shorter.domain.service.Myservice;
 
 import jakarta.validation.Valid;
-
 import java.util.List;
 import java.util.Map;
+import java.util.Optional; 
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -50,4 +51,24 @@ public class Mycontroller {
                     .body(Map.of("error", ex.getMessage()));
         }
     }
+
+    @GetMapping("api/{shortKey}")
+    public ResponseEntity<?> redirectToOriginal(@PathVariable String shortKey) {
+    Optional<ShortUrlDto> dtoOpt = myservice.getOriginalUrlByShortKey(shortKey);
+
+    if (dtoOpt.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Short URL not found or expired"));
+    }
+    
+
+    String originalUrl = dtoOpt.get().originalUrl(); 
+
+    return ResponseEntity.status(HttpStatus.OK)
+            .body(Map.of(
+                "success", true,
+                "url", originalUrl
+            ));
+}
+
+
 }

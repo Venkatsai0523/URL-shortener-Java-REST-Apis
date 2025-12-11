@@ -3,6 +3,7 @@ package com.example.url.java_url_shorter.domain.service;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import javax.management.RuntimeErrorException;
 
@@ -15,7 +16,10 @@ import com.example.url.java_url_shorter.domain.models.ShortUrlDto;
 import com.example.url.java_url_shorter.domain.repository.Shortrepo;
 import com.example.url.java_url_shorter.domain.utility.ExeValidator;
 
+import jakarta.transaction.Transactional;
+
 @Service
+
 public class Myservice {
 
     private final Shortrepo shortrepo;
@@ -33,6 +37,7 @@ public class Myservice {
         return shortrepo.getAllPublicUrls().stream().map(entityMapper::toshortDto).toList();
     }
 
+    @Transactional
     public ShortUrlDto createShortUrl(CreateShorturlcmd cmd) {
 
         if (properties.ValidateOriginalUrl()) {
@@ -73,6 +78,31 @@ public class Myservice {
         }
         return str.toString();
     }
+
+
+    // GetOriginalUrl from ShortUrl
+    @Transactional
+    public Optional<ShortUrlDto> getOriginalUrlByShortKey(String shortKey) {
+
+    Optional<ShortUrl> optionalShortUrl = shortrepo.findByshortKey(shortKey);
+
+    // If shortKey does not exist
+    if (optionalShortUrl.isEmpty()) {
+        return Optional.empty();
+    }
+
+    ShortUrl shortUrl = optionalShortUrl.get();
+
+    if (shortUrl.getExpiresAt() != null && shortUrl.getExpiresAt().isBefore(Instant.now())) {
+        return Optional.empty();
+    }
+
+    shortUrl.setClickCount(shortUrl.getClickCount() + 1);
+    shortrepo.save(shortUrl);
+
+    return Optional.of(entityMapper.toshortDto(shortUrl));
+}
+
 
 
 }
