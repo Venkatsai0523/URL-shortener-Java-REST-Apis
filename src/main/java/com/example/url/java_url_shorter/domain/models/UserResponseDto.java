@@ -7,7 +7,6 @@ public record UserResponseDto(
         String email,
         String name
 ) implements Serializable {
-
     public UserResponseDto(String email2, Long id2, String name2) {
         this(id2, email2, name2);
     }}

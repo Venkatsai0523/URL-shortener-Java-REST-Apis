@@ -1,74 +1,75 @@
 package com.example.url.java_url_shorter.domain.controller;
 
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.*;
 
-import com.example.url.java_url_shorter.domain.dtos.CreateShortUrlRequest;
+import com.example.url.java_url_shorter.domain.dtos.*;
 import com.example.url.java_url_shorter.domain.models.CreateShorturlcmd;
 import com.example.url.java_url_shorter.domain.models.ShortUrlDto;
+import com.example.url.java_url_shorter.domain.service.AuthService;
 import com.example.url.java_url_shorter.domain.service.Myservice;
 
 import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional; 
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import java.util.*;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000", allowedHeaders = "*")
+@RequestMapping("/api")
+@CrossOrigin("*")
 public class Mycontroller {
 
-    @Autowired
-    private Myservice myservice;
-    public Mycontroller(Myservice myservice){
+    private final Myservice myservice;
+    private final AuthService authService;
+
+    public Mycontroller(Myservice myservice, AuthService authService) {
         this.myservice = myservice;
+        this.authService = authService;
     }
 
     @GetMapping("/list")
     public ResponseEntity<List<ShortUrlDto>> getAllList() {
-        List<ShortUrlDto> list = myservice.getallpublicList();
-        return ResponseEntity.ok(list);
+        return ResponseEntity.ok(myservice.getallpublicList());
     }
 
-    @PostMapping("api/create")
+    @PostMapping("/create")
     public ResponseEntity<?> createShortUrl(@RequestBody @Valid CreateShortUrlRequest request) {
         try {
             var cmd = new CreateShorturlcmd(request.originalUrl());
-            ShortUrlDto shortUrlDto = myservice.createShortUrl(cmd);
-
-            return ResponseEntity.ok(shortUrlDto);
-
+            ShortUrlDto dto = myservice.createShortUrl(cmd);
+            return ResponseEntity.ok(dto);
         } catch (Exception ex) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }
 
-    @GetMapping("api/{shortKey}")
+    @GetMapping("/{shortKey}")
     public ResponseEntity<?> redirectToOriginal(@PathVariable String shortKey) {
-    Optional<ShortUrlDto> dtoOpt = myservice.getOriginalUrlByShortKey(shortKey);
+        var dtoOpt = myservice.getOriginalUrlByShortKey(shortKey);
 
-    if (dtoOpt.isEmpty()) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Short URL not found or expired"));
+        if (dtoOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Short URL not found or expired"));
+        }
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "url", dtoOpt.get().originalUrl()
+        ));
     }
-    
 
-    String originalUrl = dtoOpt.get().originalUrl(); 
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto request) {
+        try {
+            LoginResponseDto res = authService.login(request);
+            return ResponseEntity.ok(res);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", ex.getMessage()));
+        }
+    }
 
-    return ResponseEntity.status(HttpStatus.OK)
-            .body(Map.of(
-                "success", true,
-                "url", originalUrl
-            ));
-}
-
-
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponseDto> register(@RequestBody RegisterRequestDto request) {
+        RegisterResponseDto res = authService.register(request);
+        return ResponseEntity.ok(res);
+    }
 }

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.management.RuntimeErrorException;
-
 import org.springframework.stereotype.Service;
 
 import com.example.url.java_url_shorter.ApplicationProperties;
@@ -19,7 +18,7 @@ import com.example.url.java_url_shorter.domain.utility.ExeValidator;
 import jakarta.transaction.Transactional;
 
 @Service
-
+@Transactional
 public class Myservice {
 
     private final Shortrepo shortrepo;
@@ -30,7 +29,7 @@ public class Myservice {
     public Myservice(Shortrepo shortrepo,EntityMapper entityMapper,ApplicationProperties properties) {
         this.shortrepo = shortrepo;
         this.entityMapper = entityMapper;
-        this.properties=properties;
+        this.properties=properties;;
     }
 
     public List<ShortUrlDto> getallpublicList() {
@@ -79,30 +78,16 @@ public class Myservice {
         return str.toString();
     }
 
-
-    // GetOriginalUrl from ShortUrl
-    @Transactional
+    @Transactional 
     public Optional<ShortUrlDto> getOriginalUrlByShortKey(String shortKey) {
-
-    Optional<ShortUrl> optionalShortUrl = shortrepo.findByshortKey(shortKey);
-
-    // If shortKey does not exist
-    if (optionalShortUrl.isEmpty()) {
-        return Optional.empty();
-    }
-
-    ShortUrl shortUrl = optionalShortUrl.get();
-
-    if (shortUrl.getExpiresAt() != null && shortUrl.getExpiresAt().isBefore(Instant.now())) {
-        return Optional.empty();
-    }
-
-    shortUrl.setClickCount(shortUrl.getClickCount() + 1);
-    shortrepo.save(shortUrl);
-
-    return Optional.of(entityMapper.toshortDto(shortUrl));
-}
-
-
+         Optional<ShortUrl> optionalShortUrl = shortrepo.findByshortKey(shortKey); 
+         if (optionalShortUrl.isEmpty()) { return Optional.empty(); } 
+         
+         ShortUrl shortUrl = optionalShortUrl.get(); 
+         if (shortUrl.getExpiresAt() != null && shortUrl.getExpiresAt().isBefore(Instant.now())) 
+            { return Optional.empty(); } 
+         shortUrl.setClickCount(shortUrl.getClickCount() + 1); 
+         shortrepo.save(shortUrl); 
+         return Optional.of(entityMapper.toshortDto(shortUrl)); }
 
 }
